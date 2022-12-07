@@ -15,8 +15,61 @@
 		<form id="chat">
 			<input type="text" name="username" placeholder="Nome de Usuário" />
 			<div class="messages"></div>
-			<input type="text" name="message" placeholder="Mensagem" />
+			<input type="text" name="message" placeholder="Mensagem" id="message" />
 			<button type="submit">Enviar</button>
 		</form>
 	</body>
+
+	<script type="text/javascript">
+		var socket = io('http://localhost:3000');
+
+		function renderMessage(message, direction) {
+			if (direction == '>>') {
+				$('.messages').append(
+					'<div class="message-wrapper"><div class="message-out"><strong>' +
+						message.author +
+						'</strong>: ' +
+						message.message +
+						'</div></div>'
+				);
+			}
+			if (direction == '<<') {
+				$('.messages').append(
+					'<div class="message-wrapper"><div class="message-in"><strong>' +
+						message.author +
+						'</strong>: ' +
+						message.message +
+						'</div></div>'
+				);
+			}
+		}
+
+		socket.on('receivedMessage', function (message) {
+			renderMessage(message, '<<');
+		});
+
+		socket.on('previousMessages', function (messages) {
+			for (message of messages) {
+				renderMessage(message, '<<');
+			}
+		});
+
+		$('#chat').submit(function (event) {
+			event.preventDefault();
+			var author = $('input[name="username"]').val();
+			var message = $('input[name="message"]').val();
+			if (author.length && message.length) {
+				var messageObject = {
+					author: author,
+					message: message,
+				};
+
+				renderMessage(messageObject, '>>');
+
+				socket.emit('sendMessage', messageObject);
+
+				document.getElementById('message').value = '';
+			}
+		});
+	</script>
 </html>
